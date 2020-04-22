@@ -36,14 +36,52 @@ def get_num(num_str):
 	
 		#return numeric(num_str)
 
+def try_get_num(num_str):
+	if ' ) ' in num_str:
+		return get_num(num_str.split(' ) ')[1])
+	if 'rs .' in num_str:
+		return get_num(num_str.split('rs .')[1])
+	
+	num_str = num_str.replace('. ','.')
+	num_str = num_str.replace('. ','.')
+	num_str = num_str.replace(',','')
+	if '/' in num_str:
+		n1,n2 = num_str.split('/')
+		return try_get_num(n1)/try_get_num(n2)
+	if ':' in num_str:
+		n1,n2 = num_str.split(':')
+		return try_get_num(n1)/ try_get_num(n2) 
+	for i,num in enumerate(['one','two','three','four','five','six']):
+		if num in num_str.lower():
+			return i + 1
+	num_str = num_str.replace(' ','')
+	for i in range(len(num_str),0,-1):
+		for j in range(len(num_str) - i + 1):
+			try:
+				rt = float(num_str[j : j + i])
+				return rt
+			except ValueError:
+				continue
+	if 'none' in num_str.lower():
+		return None
+
+	return 'error_ans {}'.format(num_str)
+
 
 
 def get_ans(problem,hypo):
-	ops = [get_num(op[4:]) for op in problem['options'].split(' , ')]
+	try:
+		json.loads
+		##json type ans
+	try:
+		ops = [get_num(op[4:]) for op in problem['options'].split(' , ')]
+	except:
+		print('get_ans err')
+		return 'err_ans:','err'
 	correct = ord(problem['correct']) - ord('a')
 	choose = 0
 	have_none = -1
-	for i in range(1,5):
+	for i in range(5):
 		if ops[i] == None:
 			have_none = i
 			continue
@@ -80,20 +118,22 @@ def main():
 		count += 1
 		idx,tgt,hypo = l.split('\t')
 		idx = int(idx)
-
-		hyponum = caculate(tgt,nlist[idx])
+		print(idx)
+		hyponum = caculate(hypo,nlist[idx])
 		if type(hyponum) == type('asdf'):
 			print(idx,'hypo',hyponum)
 			error_c += 1
 			continue
-		try:
-			correct, choose = get_ans(problems[idx],hyponum)
+		
+		correct, choose = get_ans(problems[idx],hyponum)
+		if type(correct) != type('asdf'):
 			if correct == choose:
 				ac += 1
 			else:
-				print('error ans',idx)
-		except:
-			print(idx)
+				print('wrong ans',idx)
+		else:
+			
+			print(idx,'err_ans',err_ans)
 			err_ans += 1
 			continue
 	print(ac/count)
