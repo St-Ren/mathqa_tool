@@ -1,5 +1,7 @@
 import math
 def toNum(word,ns,hashtag):
+	if 'negate' in word:
+		return None
 	if word[0] == 'n':
 		idx = int(word[1:])
 		if idx < len(ns):
@@ -20,6 +22,8 @@ def toNum(word,ns,hashtag):
 			n = ns[1]
 		if n == 'pi':
 			return math.pi
+		if n == 'deg':
+			return 0.0174532925
 		return float(n)
 	else:
 		print('invalid number '+word)
@@ -50,7 +54,16 @@ def caculate(op,ns):
 		elif ops[i] == 'square_area':
 			hashtag.append(num1 * num1)
 		elif ops[i] == 'log':
-			hashtag.append(math.log(num1))
+			try:
+				hashtag.append(math.log(num1))
+			except ValueError:
+				if int(num1) == 0:
+					return 'zero log'
+				try:
+					hashtag.append(math.log(int(num1)))
+				except:
+					return 'bn log'
+
 		elif ops[i] == 'negate_prob':
 			hashtag.append(1 - num1)
 		elif ops[i] == 'factorial':
@@ -70,13 +83,19 @@ def caculate(op,ns):
 		elif ops[i] == 'volume_cube':
 			hashtag.append(num1 ** 3)
 		elif ops[i] == 'cube_edge_by_volume':
-			hashtag.append(math.pow(num1,1/3))
+			try:
+				hashtag.append(math.pow(num1,1/3))
+			except:
+				return '{} {}'.format(ops[i],num1)
 		elif ops[i] == 'volume_sphere':
 			hashtag.append(math.pi * num1 ** 3 * 4 /3)
 		elif ops[i] == 'square_perimeter':
 			hashtag.append(num1 * 4)
 		elif ops[i] == 'square_edge_by_area':
-			hashtag.append(math.sqrt(num1))
+			try:
+				hashtag.append(math.sqrt(num1))
+			except:
+				return '{} {}'.format(ops[i],num1)
 		elif ops[i] == 'square_edge_by_perimeter':
 			hashtag.append(num1 / 4)
 
@@ -114,6 +133,8 @@ def caculate(op,ns):
 			elif ops[i] == 'gcd':
 				hashtag.append(math.gcd(int(num1),int(num2)))
 			elif ops[i] == 'lcm':
+				if int(num1) == 0 or int(num2) == 0:
+					return 0
 				hashtag.append(num1 * num2 / math.gcd(int(num1),int(num2)))
 			elif ops[i] == 'triangle_area':
 				hashtag.append(num1 * num2 / 2)
@@ -124,12 +145,20 @@ def caculate(op,ns):
 					return 'n2 > n1 choose {} {}'.format(num1,num2)
 				if num1 > 10 ** 3:
 					return 'fac big num {}'.format(num1)
-				hashtag.append(math.factorial(num1) / math.factorial(num2) / math.factorial(num1 - num2))
+				num1 = int(num1)
+				num2 = int(num2)
+				if num2 == 0 or num2 == num1:
+					hashtag.append(1)
+				if num1 < 0 or num2 <0 or num1 - num2 < 0:
+					return 'neg fac while choose {},{}\n'.format(num1,num2) 
+
+				hashtag.append(math.factorial(num1) // math.factorial(num2) // math.factorial(num1 - num2))
 			elif ops[i] == 'volume_cylinder':
 				hashtag.append(math.pi * num1 * 2 * num2)
 			elif ops[i] == 'surface_cylinder':
 				hashtag.append(math.pi * 2 * num1** 2 + math.pi * 2 * num1 * num2)
 			elif ops[i] == 'speed':
+				return 'speed // 0'
 				hashtag.append(num1 / num2)
 			elif ops[i] == 'stream_speed':
 				hashtag.append((num1 + num2) / 2)
@@ -140,7 +169,19 @@ def caculate(op,ns):
 			elif ops[i] == 'min':
 				hashtag.append(min(num1,num2))
 			elif ops[i] == 'permutation':
-				hashtag.append(math.factorial(num1) / math.factorial(num2))
+				if num1 < 0 or num2 <0 or num1 - num2 < 0:
+					return 'neg fac while permutation {},{}\n'.format(num1,num2) 
+
+				if num1 < num2:
+					return 'n2 > n1 choose {} {}'.format(num1,num2)
+				if num1 > 10 ** 3:
+					return 'fac big num {}'.format(num1)
+				num1 = int(num1)
+				num2 = int(num2)
+				if num2 == num1:
+					hashtag.append(1)
+				else:
+					hashtag.append(math.factorial(num1) // math.factorial(num1 - num2))
 
 			else:
 				if i + 3 >= len(ops):
@@ -167,10 +208,17 @@ def caculate(op,ns):
 				i += 1
 			i += 1
 		i += 2
-		if hashtag[-1] > 10 **30:
+		if hashtag[-1] > 10 **20:
 			return 'big num'
 	return hashtag[-1]
-
+def mul_caculate(ops,nlist):
+	for op in ops:
+		ans = caculate(op,nlist)
+		if type(ans) != type('asdf'):
+			return ans
+		else:
+			print(ans)
+	return 'all hypo invalid'
 if __name__ == "__main__":
 	import json
 	import sys

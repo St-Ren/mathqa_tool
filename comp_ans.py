@@ -1,5 +1,5 @@
 from unicodedata import numeric
-from caculate import caculate,toNum
+from caculate import mul_caculate,toNum,caculate
 from word2number import w2n
 def get_num(num_str):
 
@@ -60,7 +60,7 @@ def try_get_num(num_str):
 			return None
 		return n1/n2
 	if ':' in num_str:
-		n1,n2 = num_str.split(':')
+		n1,n2,*l = num_str.split(':')
 		n1 = try_get_num(n1)
 		n2 = try_get_num(n2)
 		if n1 == None:
@@ -88,36 +88,23 @@ def try_get_num(num_str):
 		return None
 
 
+def get_ans(problem):
+	ops = problem['options']
+	if len(ops) != 5:
+		if problem['options'][1] == "'":
+			ops = json.loads(problem['options'].replace("'",'"'))
+		else:
+			ops = problem['options'].split(' , ')
 
-def get_ans(problem,hypo):
-	if problem['options'][1] == "'":
-		ops = json.loads(problem['options'].replace("'",'"'))
-	else:
-		ops = problem['options'].split(' , ')
+
 	#try:
 	ops = [try_get_num(op[4:]) for op in ops]
 	#except:
 	#	print('get_ans err',problem['options'])
 	#	return 'err_ans:','err'
-	correct = ord(problem['correct']) - ord('a')
-	if ops.count(None) == 5:
-		print('all_none')
-		return 'all','none'
-
-	choose = 0
-	c_value = 2147483647
-	have_none = -1
-	for i in range(5):
-		if ops[i] == None:
-			have_none = i
-			continue
-		if abs(hypo - ops[i]) < c_value:
-			choose = i
-			c_value = abs(hypo - ops[i])
-	if have_none >= 0:
-		if abs(hypo - ops[choose]) > 1 or (int(ops[choose]) != ops[choose] and abs((hypo - ops[choose])/ops[choose]) > 0.01):
-			choose = have_none
-	return correct, choose
+	correct = ord(problem['correct']) - ord('A')
+	
+	return ops[correct]
 
 import math
 
@@ -127,44 +114,47 @@ import json
 
 
 def main():
-	nlist = open('test.nlist').readlines()
+	nlist = open('train.nlist').readlines()
 	for i in range(len(nlist)):
 		nlist[i] = json.loads(nlist[i])
-
+	cor_f = open('correct_op.txt','w')
 	ac = 0.0
 	count = 0.0
+	matrix = [ [0] * 5 for i in range(5)]
 	if len(sys.argv) == 2:
 		out = sys.argv[1]
 	else:
 		out = 'gen.out'
 	gen = open(out).readlines()
-	problems = json.load(open('test.json'))
-	error_c = 0
+	problems = [json.loads(s) for s in open('train.tok.json')]
+	print('len prob',len(problems))
+	
 	err_ans = 0
 	for l in gen:
 		count += 1
-		idx,tgt,hypo = l.split('\t')
-		idx = int(idx)
-		print(idx)
-		hyponum = caculate(hypo,nlist[idx])
-		if type(hyponum) == type('asdf'):
-			print(idx,'hypo',hyponum)
-			error_c += 1
-			continue
+		hypos = l.split('\t')
+		idx = int(hypos[0])
+		hypos = hypos[1:]
 		
-		correct, choose = get_ans(problems[idx],hyponum)
-		if type(correct) != type('asdf'):
-			if correct == choose:
-				ac += 1
-			else:
-				print('wrong ans',idx)
-		else:
-			
-			print(idx,'err_ans',err_ans)
+		#print(hypo)
+		ans = get_ans(problems[idx])
+		if ans == None:
 			err_ans += 1
 			continue
-	print(ac/count)
-	print(error_c)
+		for hp in hypos:
+			hyponum = caculate(hp,nlist[idx])
+			if hyponum == ans:
+				ac +=1
+				cor_f.write('{} {} {}\n'.format(idx,hyponum,hp))
+				break
+		
+		
+	dic = json.load(open('len_dic.json'))
+	if dic == None:
+		dic = dict()
+	dic[len(hypos)] = [ac,err_ans]
+	json.dump(dic, open('len_dic.json','w'))
+	print(ac)
 	print(err_ans)
 if __name__ == '__main__':
 	main()
